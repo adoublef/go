@@ -6,8 +6,10 @@
 package main
 
 import (
+	"cmp"
 	"embed"
 	"net/http"
+	"os"
 )
 
 //go:embed all:*.html
@@ -15,5 +17,6 @@ var fsys embed.FS
 
 func main() {
 	http.Handle("GET /{$}", http.FileServerFS(fsys))
-	http.ListenAndServe(":8080", nil)
+	addr := ":" + cmp.Or(os.Getenv("PORT"), "8080")
+	http.ListenAndServe(addr, nil)
 }

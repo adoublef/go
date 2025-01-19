@@ -1,0 +1,21 @@
+# Copyright 2025 Kristopher Rahim Afful-Brown. All rights reserved.
+#
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+services:
+  daemon:
+    container_name: daemon
+    image: go.adoublef.dev:0.1.0
+    platform: linux/arm64
+    build:
+      context: .
+      # uncomment to use chainguard registry instead
+      args:
+        - REGISTRY=cgr.dev
+      platforms:
+        - linux/arm64
+        - linux/amd64
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

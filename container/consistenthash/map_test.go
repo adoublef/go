@@ -9,12 +9,12 @@ import (
 	"hash/crc32"
 	"io"
 	"math"
+	"math/rand/v2"
 	"net"
 	"strconv"
 	"testing"
 
 	. "go.adoublef.dev/container/consistenthash"
-	"golang.org/x/exp/rand"
 )
 
 func TestMap(t *testing.T) {
@@ -91,7 +91,7 @@ func TestMap(t *testing.T) {
 		strings := make([]string, cases)
 
 		for i := 0; i < cases; i++ {
-			r := rand.Int31()
+			r := rand.Int32()
 			ip := net.IPv4(192, byte(r>>16), byte(r>>8), byte(r))
 			strings[i] = ip.String()
 		}

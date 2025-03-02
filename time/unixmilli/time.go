@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package unix
+package unixmilli
 
 import (
 	"database/sql/driver"
@@ -14,7 +14,7 @@ import (
 // Time implements the RFC3339 format.
 type Time int64
 
-func (t Time) Time() time.Time { return time.Unix(int64(t), 0).UTC() }
+func (t Time) Time() time.Time { return time.UnixMilli(int64(t)).UTC() }
 
 func (t Time) Equal(t2 Time) bool { return t == t2 }
 
@@ -42,11 +42,11 @@ func Parse(layout, s string) (Time, error) {
 	if err != nil {
 		return 0, err
 	}
-	return Time(tt.UTC().Unix()), nil
+	return Time(tt.UTC().UnixMilli()), nil
 }
 
 // FromTime converts a [time.Time] into unix time.
-func FromTime(t time.Time) Time { return Time(t.UTC().Unix()) }
+func FromTime(t time.Time) Time { return Time(t.UTC().UnixMilli()) }
 
 // Now returns the current time using the RFC3339 format.
 func Now() Time { return FromTime(time.Now()) }

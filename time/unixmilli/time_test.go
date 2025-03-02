@@ -3,12 +3,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package unix_test
+package unixmilli_test
 
 import (
 	"testing"
 
-	. "go.adoublef.dev/time/unix"
+	. "go.adoublef.dev/time/unixmilli"
 )
 
 func TestTime(t *testing.T) {
@@ -29,7 +29,7 @@ func TestTime(t *testing.T) {
 			t.Errorf("Time.Value: %v", err)
 		}
 
-		if got, want := got.(int64), int64(1475942645); got != want {
+		if got, want := got.(int64), int64(1475942645000); got != want {
 			t.Errorf("Time.Value: got=%d; want=%d", got, want)
 		}
 	})

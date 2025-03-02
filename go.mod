@@ -1,3 +1,5 @@
 module go.adoublef.dev
 
-go 1.23.3
+go 1.24.0
+
+require github.com/matryer/is v1.4.1

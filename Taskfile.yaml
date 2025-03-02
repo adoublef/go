@@ -23,7 +23,7 @@ tasks:
     deps:
       - tidy
     cmd: |
-      DEBUG=1 go test -count=1 -cover -timeout=60s {{.CLI_ARGS}}
+      DEBUG=1 go test -race -count=1 -cover -timeout=60s {{.CLI_ARGS}}
 
   up:
     desc: run services

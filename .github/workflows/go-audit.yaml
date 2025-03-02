@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest # server will only be on linux, but cli could be on multiple architectures
     strategy:
       matrix:
-        go-version: ["1.23.x"]
+        go-version: ["1.24.x"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go

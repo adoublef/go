@@ -19,7 +19,7 @@ func TestGroup(t *testing.T) {
 	t.Run("Do", func(t *testing.T) {
 		const Delta = 10000
 
-		var g Group[string, any]
+		var g Group[string]
 		var count int
 
 		var wg sync.WaitGroup
@@ -27,11 +27,11 @@ func TestGroup(t *testing.T) {
 
 		for i := range Delta {
 			go func() {
-				g.Do("1", func() (any, error) {
+				g.Do("1", func() error {
 					// wait group needed next to the work
 					count += (i + 1)
 					wg.Done()
-					return nil, nil
+					return nil
 				})
 			}()
 		}
@@ -43,7 +43,7 @@ func TestGroup(t *testing.T) {
 	t.Run("Keyed", func(t *testing.T) {
 		const Delta = 10000
 
-		var g Group[string, any]
+		var g Group[string]
 		var odd, even int
 
 		var wg sync.WaitGroup
@@ -51,14 +51,14 @@ func TestGroup(t *testing.T) {
 
 		for i := range Delta {
 			go func() {
-				g.Do(strconv.Itoa((i%2)+1), func() (any, error) {
+				g.Do(strconv.Itoa((i%2)+1), func() error {
 					if i%2 == 0 {
 						odd += (i + 1)
 					} else {
 						even += (i + 1)
 					}
 					wg.Done()
-					return nil, nil
+					return nil
 				})
 			}()
 		}
@@ -71,7 +71,7 @@ func TestGroup(t *testing.T) {
 	t.Run("TryDo", func(t *testing.T) {
 		const Delta = 100 // a message should fail with this load
 
-		var g Group[string, any]
+		var g Group[string]
 		var success, failed atomic.Int64
 
 		var wg sync.WaitGroup
@@ -79,10 +79,10 @@ func TestGroup(t *testing.T) {
 
 		for range Delta {
 			go func() {
-				if _, _, ok := g.TryDo("1", func() (any, error) {
+				if _, ok := g.TryDo("1", func() error {
 					success.Add(1)
 					wg.Done()
-					return nil, nil
+					return nil
 				}); !ok {
 					failed.Add(1)
 					wg.Done()

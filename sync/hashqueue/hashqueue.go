@@ -13,56 +13,45 @@ import (
 	"go.adoublef.dev/runtime/debug"
 )
 
-type Result[V any] struct {
-	Val V
-	Err error
-}
-
 type call struct {
 	funcs chan func()
 	count int64
 }
 
-type Group[K comparable, V any] struct {
+type Group[K comparable] struct {
 	mu sync.Mutex
 	m  map[K]*call
 }
 
-func (g *Group[K, V]) Do(key K, fn func() (V, error)) (V, error) {
+func (g *Group[K]) Do(key K, fn func() error) error {
 	c := g.loadCall(key)
 
-	res := make(chan Result[V], 1)
+	res := make(chan error, 1)
 	c.funcs <- func() {
-		val, err := fn()
-		res <- Result[V]{val, err}
+		res <- fn()
 	}
-
-	r := <-res
-	return r.Val, r.Err
+	return <-res
 }
 
-func (g *Group[K, V]) DoChan(key K, fn func() (V, error)) <-chan Result[V] {
+func (g *Group[K]) DoChan(key K, fn func() error) <-chan error {
 	c := g.loadCall(key)
 
-	res := make(chan Result[V], 1)
+	res := make(chan error, 1)
 	c.funcs <- func() {
-		val, err := fn()
-		res <- Result[V]{val, err}
+		res <- fn()
 	}
 	return res
 }
 
-func (g *Group[K, V]) TryDo(key K, fn func() (V, error)) (V, error, bool) {
+func (g *Group[K]) TryDo(key K, fn func() error) (error, bool) {
 	c := g.loadCall(key)
 
-	res := make(chan Result[V], 1)
+	res := make(chan error, 1)
 	select {
 	case c.funcs <- func() {
-		val, err := fn()
-		res <- Result[V]{val, err}
+		res <- fn()
 	}:
-		r := <-res
-		return r.Val, r.Err, true
+		return <-res, true
 	default:
 		func() {
 			g.mu.Lock()
@@ -75,11 +64,11 @@ func (g *Group[K, V]) TryDo(key K, fn func() (V, error)) (V, error, bool) {
 				close(c.funcs)
 			}
 		}()
-		return *new(V), nil, false
+		return nil, false
 	}
 }
 
-func (g *Group[K, V]) loadCall(key K) *call {
+func (g *Group[K]) loadCall(key K) *call {
 	g.mu.Lock()
 	if g.m == nil {
 		g.m = make(map[K]*call)
@@ -101,7 +90,7 @@ func (g *Group[K, V]) loadCall(key K) *call {
 	return c
 }
 
-func (g *Group[K, V]) doCall(c *call, key K) {
+func (g *Group[K]) doCall(c *call, key K) {
 	defer debug.Printf("closing call for key %v", key)
 	normalReturn := false
 

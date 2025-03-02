@@ -23,33 +23,33 @@ type Group[K comparable] struct {
 	m  map[K]*call
 }
 
-func (g *Group[K]) Do(key K, fn func() error) error {
+func (g *Group[K]) Do(key K, f func() error) error {
 	c := g.loadCall(key)
 
 	res := make(chan error, 1)
 	c.funcs <- func() {
-		res <- fn()
+		res <- f()
 	}
 	return <-res
 }
 
-func (g *Group[K]) DoChan(key K, fn func() error) <-chan error {
+func (g *Group[K]) DoChan(key K, f func() error) <-chan error {
 	c := g.loadCall(key)
 
 	res := make(chan error, 1)
 	c.funcs <- func() {
-		res <- fn()
+		res <- f()
 	}
 	return res
 }
 
-func (g *Group[K]) TryDo(key K, fn func() error) (error, bool) {
+func (g *Group[K]) TryDo(key K, f func() error) (error, bool) {
 	c := g.loadCall(key)
 
 	res := make(chan error, 1)
 	select {
 	case c.funcs <- func() {
-		res <- fn()
+		res <- f()
 	}:
 		return <-res, true
 	default:

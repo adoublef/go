@@ -91,7 +91,7 @@ func (g *Group[K]) loadCall(key K) *call {
 }
 
 func (g *Group[K]) doCall(c *call, key K) {
-	defer debug.Printf("closing call for key %v", key)
+	defer debug.Printf("sync/hashqueue: closing call for key %v", key)
 	normalReturn := false
 
 	for f := range c.funcs {

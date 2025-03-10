@@ -103,6 +103,8 @@ func (g *Group[K]) doCall(c *call, key K) {
 
 			if c.count--; c.count == 0 {
 				delete(g.m, key)
+				// closing the channel not needed
+				// but look to see if I can.
 				normalReturn = true
 			}
 		}()

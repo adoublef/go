@@ -7,6 +7,7 @@ package batch
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"time"
 
@@ -83,6 +84,7 @@ func (g *Group[K, V]) runLoop(f func(ctx context.Context, reqs ...Batch[K, V])) 
 					break EMPTY
 				}
 			}
+			slices.Chunk(calls, idx)
 			debug.Printf("sync/bacth: %d = idx", idx)
 			switch d := g.BatchTimeout; {
 			case d > 0:
@@ -104,11 +106,10 @@ func (g *Group[K, V]) runLoop(f func(ctx context.Context, reqs ...Batch[K, V])) 
 
 func (g *Group[K, V]) Close() error {
 	g.close.Do(func() {
-		// Only close the quit channel if it has been initialized
 		if g.quit != nil {
 			close(g.quit)
-			g.wg.Wait()
 		}
+		g.wg.Wait()
 	})
 	return nil
 }

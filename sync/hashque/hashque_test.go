@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package hashqueue_test
+package hashque_test
 
 import (
 	"strconv"
@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	. "go.adoublef.dev/sync/hashqueue"
+	. "go.adoublef.dev/sync/hashque"
 	"go.adoublef.dev/testing/is"
 )
 
@@ -27,11 +27,10 @@ func TestGroup(t *testing.T) {
 
 		for i := range Delta {
 			go func() {
-				g.Do("1", func() error {
+				g.Do("1", func() {
 					// wait group needed next to the work
 					count += (i + 1)
 					wg.Done()
-					return nil
 				})
 			}()
 		}
@@ -51,14 +50,13 @@ func TestGroup(t *testing.T) {
 
 		for i := range Delta {
 			go func() {
-				g.Do(strconv.Itoa((i%2)+1), func() error {
+				g.Do(strconv.Itoa((i%2)+1), func() {
 					if i%2 == 0 {
 						odd += (i + 1)
 					} else {
 						even += (i + 1)
 					}
 					wg.Done()
-					return nil
 				})
 			}()
 		}
@@ -79,10 +77,9 @@ func TestGroup(t *testing.T) {
 
 		for range Delta {
 			go func() {
-				if _, ok := g.TryDo("1", func() error {
+				if ok := g.TryDo("1", func() {
 					success.Add(1)
 					wg.Done()
-					return nil
 				}); !ok {
 					failed.Add(1)
 					wg.Done()

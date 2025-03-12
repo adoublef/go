@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package batch_test
+package batchque_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"sync"
 	"testing"
 
-	. "go.adoublef.dev/sync/batch"
+	. "go.adoublef.dev/sync/batchque"
 	"go.adoublef.dev/testing/is"
 )
 
@@ -37,9 +37,9 @@ func TestGroup_Do(t *testing.T) {
 			wg.Add(1)
 			go func(idx int, str string) {
 				defer wg.Done()
-				res, err := g.Do(ctx, str, func(_ context.Context, reqs ...Batch[string, int]) {
+				res, err := g.Do(ctx, str, func(_ context.Context, reqs []*Request[string, int]) {
 					for _, r := range reqs {
-						if n := len(r.Data); n > 10 {
+						if n := len(r.Val); n > 10 {
 							r.CancelFunc(errors.New("too many characters"))
 						} else {
 							r.C <- n
@@ -75,9 +75,9 @@ func TestGroup_Do(t *testing.T) {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				_, err := g.Do(ctx, i, func(ctx context.Context, messages ...Batch[int, int]) {
+				_, err := g.Do(ctx, i, func(ctx context.Context, messages []*Request[int, int]) {
 					for _, msg := range messages {
-						msg.C <- msg.Data
+						msg.C <- msg.Val
 					}
 				})
 				is.OK(t, err) // Should not panic or error
@@ -104,14 +104,14 @@ func TestGroup_Do(t *testing.T) {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
-				r, err := g.Do(ctx, idx, func(ctx context.Context, reqs ...Batch[int, int]) {
+				r, err := g.Do(ctx, idx, func(ctx context.Context, reqs []*Request[int, int]) {
 					for _, r := range reqs {
-						if r.Data%2 == 0 {
+						if r.Val%2 == 0 {
 							// Even numbers succeed
-							r.C <- r.Data * 2
+							r.C <- r.Val * 2
 						} else {
 							// Odd numbers return an error
-							errMsg := fmt.Sprintf("error processing odd number: %d", r.Data)
+							errMsg := fmt.Sprintf("error processing odd number: %d", r.Val)
 							r.CancelFunc(errors.New(errMsg))
 						}
 					}

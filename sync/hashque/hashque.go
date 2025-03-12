@@ -5,13 +5,60 @@
 
 // Package hashqueue provides a serialisation function call execution
 // mechanism.
-package hashqueue
+package hashque
 
 import (
 	"sync"
 
 	"go.adoublef.dev/runtime/debug"
 )
+
+func ValueFunc[K comparable, T any](g *Group[K], key K, f func() T) T {
+	c := make(chan T)
+	g.Do(key, func() {
+		defer close(c)
+		c <- f()
+	})
+	return <-c
+}
+
+func TryValueFunc[K comparable, V any](g *Group[K], key K, f func() V) (V, bool) {
+	c := make(chan V, 1)
+	ok := g.TryDo(key, func() {
+		defer close(c)
+		c <- f()
+	})
+	return <-c, ok
+}
+
+type Result[V any] struct {
+	Val V
+	Err error
+}
+
+func ResultFunc[K comparable, T any](g *Group[K], key K, f func() (T, error)) (T, error) {
+	c := make(chan Result[T])
+	g.Do(key, func() {
+		defer close(c)
+		var r Result[T]
+		r.Val, r.Err = f()
+		c <- r
+	})
+	r := <-c
+	return r.Val, r.Err
+}
+
+func ResultChan[K comparable, V any](g *Group[K], key K, f func() (V, error)) <-chan Result[V] {
+	// should maybe add a way to cancel this?
+	res := make(chan Result[V], 1)
+	g.Do(key, func() {
+		defer close(res)
+		var r Result[V]
+		r.Val, r.Err = f()
+		res <- r
+	})
+	return res
+}
 
 type call struct {
 	funcs chan func()
@@ -23,35 +70,18 @@ type Group[K comparable] struct {
 	m  map[K]*call
 }
 
-func (g *Group[K]) Do(key K, f func() error) error {
+func (g *Group[K]) Do(key K, f func()) {
 	c := g.loadCall(key)
 
-	res := make(chan error, 1)
-	c.funcs <- func() {
-		res <- f()
-	}
-	return <-res
+	c.funcs <- f
 }
 
-func (g *Group[K]) DoChan(key K, f func() error) <-chan error {
+func (g *Group[K]) TryDo(key K, f func()) bool {
 	c := g.loadCall(key)
 
-	res := make(chan error, 1)
-	c.funcs <- func() {
-		res <- f()
-	}
-	return res
-}
-
-func (g *Group[K]) TryDo(key K, f func() error) (error, bool) {
-	c := g.loadCall(key)
-
-	res := make(chan error, 1)
 	select {
-	case c.funcs <- func() {
-		res <- f()
-	}:
-		return <-res, true
+	case c.funcs <- f:
+		return true
 	default:
 		func() {
 			g.mu.Lock()
@@ -64,7 +94,7 @@ func (g *Group[K]) TryDo(key K, f func() error) (error, bool) {
 				close(c.funcs)
 			}
 		}()
-		return nil, false
+		return false
 	}
 }
 

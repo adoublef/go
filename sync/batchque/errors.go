@@ -7,7 +7,7 @@ package batchque
 
 import "sync"
 
-func Error[K comparable, V any](rr []*Request[K, V], err error) {
+func CancelFunc[K comparable, V any](rr []*Request[K, V], err error) {
 	var wg sync.WaitGroup
 	wg.Add(len(rr))
 	for _, a := range rr {

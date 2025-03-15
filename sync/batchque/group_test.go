@@ -75,9 +75,9 @@ func TestGroup_Do(t *testing.T) {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				_, err := g.Do(ctx, i, func(ctx context.Context, messages []*Request[int, int]) {
-					for _, msg := range messages {
-						msg.C <- msg.Val
+				_, err := g.Do(ctx, i, func(ctx context.Context, rr []*Request[int, int]) {
+					for _, r := range rr {
+						r.C <- r.Val
 					}
 				})
 				is.OK(t, err) // Should not panic or error
@@ -104,8 +104,8 @@ func TestGroup_Do(t *testing.T) {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
-				r, err := g.Do(ctx, idx, func(ctx context.Context, reqs []*Request[int, int]) {
-					for _, r := range reqs {
+				r, err := g.Do(ctx, idx, func(ctx context.Context, rr []*Request[int, int]) {
+					for _, r := range rr {
 						if r.Val%2 == 0 {
 							// Even numbers succeed
 							r.C <- r.Val * 2

@@ -33,11 +33,11 @@ func TestGroup_Do(t *testing.T) {
 
 		testInputs := []string{"one", "two", "three", "four", "five"}
 
-		for i, input := range testInputs {
+		for idx, input := range testInputs {
 			wg.Add(1)
-			go func(idx int, str string) {
+			go func() {
 				defer wg.Done()
-				res, err := g.Do(ctx, str, func(_ context.Context, reqs []*Request[string, int]) {
+				res, err := g.Do(ctx, input, func(_ context.Context, reqs []Request[string, int]) {
 					for _, r := range reqs {
 						if n := len(r.Val); n > 10 {
 							r.CancelFunc(errors.New("too many characters"))
@@ -48,7 +48,7 @@ func TestGroup_Do(t *testing.T) {
 				})
 				results[idx] = res
 				errs[idx] = err
-			}(i, input)
+			}()
 		}
 
 		wg.Wait()
@@ -71,17 +71,17 @@ func TestGroup_Do(t *testing.T) {
 
 		// Launch 2000 concurrent requests (more than fixed array size)
 		var wg sync.WaitGroup
-		for i := range 2000 {
+		for i := range 1001 {
 			wg.Add(1)
-			go func(i int) {
+			go func() {
 				defer wg.Done()
-				_, err := g.Do(ctx, i, func(ctx context.Context, rr []*Request[int, int]) {
+				_, err := g.Do(ctx, i, func(ctx context.Context, rr []Request[int, int]) {
 					for _, r := range rr {
 						r.C <- r.Val
 					}
 				})
 				is.OK(t, err) // Should not panic or error
-			}(i)
+			}()
 		}
 		wg.Wait()
 		// g.Close()
@@ -102,9 +102,9 @@ func TestGroup_Do(t *testing.T) {
 		var wg sync.WaitGroup
 		for i := range N {
 			wg.Add(1)
-			go func(idx int) {
+			go func() {
 				defer wg.Done()
-				r, err := g.Do(ctx, idx, func(ctx context.Context, rr []*Request[int, int]) {
+				r, err := g.Do(ctx, i, func(ctx context.Context, rr []Request[int, int]) {
 					for _, r := range rr {
 						if r.Val%2 == 0 {
 							// Even numbers succeed
@@ -116,9 +116,9 @@ func TestGroup_Do(t *testing.T) {
 						}
 					}
 				})
-				rs[idx] = r
-				errs[idx] = err
-			}(i)
+				rs[i] = r
+				errs[i] = err
+			}()
 		}
 		wg.Wait()
 

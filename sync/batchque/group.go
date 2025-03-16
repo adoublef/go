@@ -11,98 +11,93 @@ import (
 	"sync/atomic"
 )
 
-type Group[K comparable, V any] struct {
+type Group[K comparable, R any] struct {
 	wg       sync.WaitGroup
 	init     sync.Once
-	requests chan *Request[K, V]
+	requests chan Request[K, R]
 	quit     chan struct{}
 	closed   atomic.Bool
 }
 
-func (g *Group[K, V]) Do(ctx context.Context, key K, f func(context.Context, []*Request[K, V])) (V, error) {
+func (g *Group[K, R]) Do(ctx context.Context, key K, f func(context.Context, []Request[K, R])) (R, error) {
 	if g.closed.Load() {
-		return *new(V), ErrClosed
+		return *new(R), ErrClosed
 	}
 	g.init.Do(runLoop(g, f))
 
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
-	r := &Request[K, V]{
+	c := make(chan R, 1)
+	r := Request[K, R]{
 		Val:        key,
-		C:          make(chan V, 1),
+		C:          c,
 		CancelFunc: cancel,
 		ctx:        ctx,
-		c:          make(chan V, 1),
 	}
 
 	select {
 	case g.requests <- r: // was able to put it on the batch queue
 	case <-ctx.Done():
-		return *new(V), context.Cause(ctx)
+		return *new(R), context.Cause(ctx)
 	}
 	select {
-	case res := <-r.c:
-		return res, nil /* errors.New("<nil>") */
+	case res := <-c:
+		return res, nil
 	case <-ctx.Done():
-		return *new(V), context.Cause(ctx)
+		return *new(R), context.Cause(ctx)
 	}
 }
 
-func runLoop[K comparable, V any](g *Group[K, V], f func(context.Context, []*Request[K, V])) func() {
+func runLoop[K comparable, R any](g *Group[K, R], f func(context.Context, []Request[K, R])) func() {
+	merge := func(ss []func() bool, ctx context.Context, cancel context.CancelFunc, n *atomic.Int64) []func() bool {
+		n.Add(1)
+		return append(ss, context.AfterFunc(ctx, func() {
+			if n.Add(-1) == 0 {
+				cancel()
+			}
+		}))
+	}
+
 	return func() {
-		g.requests = make(chan *Request[K, V], 16)
+		g.requests = make(chan Request[K, R], 16) // backpressure?
 		g.quit = make(chan struct{})
 
 		g.wg.Add(1)
 		go func() {
 			defer g.wg.Done()
-
-			rr := make([]*Request[K, V], 0, 1<<10) // =1kb
+			rr := make([]Request[K, R], 0, 1<<10) // =1kb
+			ss := make([]func() bool, 0, 1<<10)   // =1kb
 			for {
-				callCtx, callCancel := context.WithCancel(context.Background())
-				var cw atomic.Int64
+				ctx, cancel := context.WithCancel(context.Background())
+				var n atomic.Int64
 				select {
 				case r := <-g.requests:
 					rr = append(rr, r)
-					go waitCtx(r.ctx, callCancel, &cw, r.C, r.c)
+					ss = merge(ss, r.ctx, cancel, &n)
 				EMPTY:
 					for {
 						select {
 						case r := <-g.requests:
 							rr = append(rr, r)
-							go waitCtx(r.ctx, callCancel, &cw, r.C, r.c)
+							ss = merge(ss, r.ctx, cancel, &n)
 						default:
 							break EMPTY
 						}
 					}
-					f(callCtx, rr)
+					f(ctx, rr)
+					for _, stop := range ss {
+						stop()
+					}
+					cancel()
 					rr = rr[:0]
+					ss = ss[:0]
 				case <-g.quit:
-					callCancel()
+					cancel()
 					return
 				}
 			}
 		}()
-	}
-}
-
-func waitCtx[V any](ctx context.Context, cancel context.CancelFunc, cw *atomic.Int64, in <-chan V, out chan<- V) {
-	cw.Add(1) // bump the counter
-	var res V
-	select {
-	case <-ctx.Done():
-	case res = <-in:
-	}
-	if cw.Add(-1) == 0 {
-		cancel()
-	}
-	if err := ctx.Err(); err != nil {
-		return
-	}
-	select {
-	case <-ctx.Done():
-	case out <- res:
 	}
 }
 
@@ -119,8 +114,7 @@ func (g *Group[K, V]) Close() error {
 // Request is just a channel absctraction
 type Request[V, R any] struct {
 	Val        V
-	C          chan R
-	c          chan R
+	C          chan<- R // public
 	ctx        context.Context
 	CancelFunc context.CancelCauseFunc
 }

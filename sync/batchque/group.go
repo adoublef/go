@@ -7,36 +7,33 @@ package batchque
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 type Group[K comparable, V any] struct {
-	BatchTimeout time.Duration
-	wg           sync.WaitGroup
-	init         sync.Once
-	requests     chan *Request[K, V]
-	quit         chan struct{}
-	closed       atomic.Bool
+	wg       sync.WaitGroup
+	init     sync.Once
+	requests chan *Request[K, V]
+	quit     chan struct{}
+	closed   atomic.Bool
 }
 
 func (g *Group[K, V]) Do(ctx context.Context, key K, f func(context.Context, []*Request[K, V])) (V, error) {
 	if g.closed.Load() {
-		return *new(V), errors.New("group is closed") // make meaningful
+		return *new(V), ErrClosed
 	}
 	g.init.Do(runLoop(g, f))
 
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
-	res := make(chan V, 1)
 	r := &Request[K, V]{
 		Val:        key,
-		C:          res,
-		ctx:        ctx,
+		C:          make(chan V, 1),
 		CancelFunc: cancel,
+		ctx:        ctx,
+		c:          make(chan V, 1),
 	}
 
 	select {
@@ -45,8 +42,8 @@ func (g *Group[K, V]) Do(ctx context.Context, key K, f func(context.Context, []*
 		return *new(V), context.Cause(ctx)
 	}
 	select {
-	case res := <-res:
-		return res, nil
+	case res := <-r.c:
+		return res, nil /* errors.New("<nil>") */
 	case <-ctx.Done():
 		return *new(V), context.Cause(ctx)
 	}
@@ -63,28 +60,49 @@ func runLoop[K comparable, V any](g *Group[K, V], f func(context.Context, []*Req
 
 			rr := make([]*Request[K, V], 0, 1<<10) // =1kb
 			for {
+				callCtx, callCancel := context.WithCancel(context.Background())
+				var cw atomic.Int64
 				select {
 				case r := <-g.requests:
 					rr = append(rr, r)
+					go waitCtx(r.ctx, callCancel, &cw, r.C, r.c)
 				EMPTY:
 					for {
 						select {
 						case r := <-g.requests:
 							rr = append(rr, r)
+							go waitCtx(r.ctx, callCancel, &cw, r.C, r.c)
 						default:
 							break EMPTY
 						}
 					}
-					// TOOD: add a timeout
-					ctx, cancel := context.WithCancel(context.Background())
-					f(ctx, rr)
-					cancel()
+					f(callCtx, rr)
 					rr = rr[:0]
 				case <-g.quit:
+					callCancel()
 					return
 				}
 			}
 		}()
+	}
+}
+
+func waitCtx[V any](ctx context.Context, cancel context.CancelFunc, cw *atomic.Int64, in <-chan V, out chan<- V) {
+	cw.Add(1) // bump the counter
+	var res V
+	select {
+	case <-ctx.Done():
+	case res = <-in:
+	}
+	if cw.Add(-1) == 0 {
+		cancel()
+	}
+	if err := ctx.Err(); err != nil {
+		return
+	}
+	select {
+	case <-ctx.Done():
+	case out <- res:
 	}
 }
 
@@ -101,7 +119,8 @@ func (g *Group[K, V]) Close() error {
 // Request is just a channel absctraction
 type Request[V, R any] struct {
 	Val        V
-	C          chan<- R
+	C          chan R
+	c          chan R
 	ctx        context.Context
 	CancelFunc context.CancelCauseFunc
 }

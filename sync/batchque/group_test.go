@@ -135,7 +135,5 @@ func TestGroup_Do(t *testing.T) {
 				is.True(t, strings.Contains(errs[i].Error(), want))
 			}
 		}
-
-		// g.Close()
 	})
 }

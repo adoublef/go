@@ -5,7 +5,10 @@
 
 package batchque
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 func CancelFunc[K comparable, V any](rr []*Request[K, V], err error) {
 	var wg sync.WaitGroup
@@ -18,3 +21,5 @@ func CancelFunc[K comparable, V any](rr []*Request[K, V], err error) {
 	}
 	wg.Wait()
 }
+
+var ErrClosed = errors.New("use of closed connection")

@@ -14,7 +14,9 @@ package xiter
 
 import (
 	"cmp"
+	"context"
 	"iter"
+	"sync"
 )
 
 // Concat returns an iterator over the concatenation of the sequences.
@@ -373,5 +375,111 @@ func Zip2[K1, V1, K2, V2 any](x iter.Seq2[K1, V1], y iter.Seq2[K2, V2]) iter.Seq
 			}
 			k2, v2, ok2 = next()
 		}
+	}
+}
+
+// Out fan-out
+// https://github.com/dreamsofcode-io/loop/tree/main
+func Out[V any](seq []V) iter.Seq[V] {
+	return func(yield func(V) bool) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var wg sync.WaitGroup
+		for _, v := range seq {
+			wg.Add(1)
+			go func() {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					if !yield(v) {
+						cancel()
+					}
+				}
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+func Out2[K, V any](seq iter.Seq2[K, V]) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var wg sync.WaitGroup
+		for k, v := range seq {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					if !yield(k, v) {
+						cancel()
+					}
+				}
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+// OutChan fan-out with a channel
+func OutChan[V, R any](out chan<- R, seq iter.Seq[V]) iter.Seq[V] {
+	return func(yield func(V) bool) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var wg sync.WaitGroup
+		for v := range seq {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					if !yield(v) {
+						cancel()
+					}
+				}
+			}()
+		}
+		go func() {
+			wg.Wait()
+			close(out)
+		}()
+	}
+}
+
+// OutChan fan-out with a channel
+func OutChan2[T1, T2, R any](out chan<- R, seq iter.Seq2[T1, T2]) iter.Seq2[T1, T2] {
+	return func(yield func(T1, T2) bool) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var wg sync.WaitGroup
+		for k, v := range seq {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					if !yield(k, v) {
+						cancel()
+					}
+				}
+			}()
+		}
+		go func() {
+			wg.Wait()
+			close(out)
+		}()
 	}
 }

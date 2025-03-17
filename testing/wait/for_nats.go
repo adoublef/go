@@ -14,7 +14,7 @@ import (
 	"github.com/nats-io/nats-server/v2/server"
 )
 
-// ForHTTP
+// ForNATS
 func ForNATS(ctx context.Context, ns *server.Server, timeout time.Duration) error {
 	o := func() error {
 		if !ns.ReadyForConnections(10 * time.Millisecond) {

@@ -1,15 +1,18 @@
-/*
-Package xiter implements basic adapters for composing iterator sequences:
+// Copyright 2025 Kristopher Rahim Afful-Brown. All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-[Concat] and [Concat2] concatenate sequences.
-[Equal], [Equal2], [EqualFunc], and [EqualFunc2] check whether two sequences contain equal values.
-[Filter] and [Filter2] filter a sequence according to a function f.
-[Limit] and [Limit2] truncate a sequence after n items.
-[Map] and [Map2] apply a function f to a sequence.
-[Merge], [Merge2], [MergeFunc], and [MergeFunc2] merge two ordered sequences.
-[Reduce] and [Reduce2] combine the values in a sequence.
-[Zip] and [Zip2] iterate over two sequences in parallel.
-*/
+// Package xiter implements basic adapters for composing iterator sequences:
+//
+// [Concat] and [Concat2] concatenate sequences.
+// [Equal], [Equal2], [EqualFunc], and [EqualFunc2] check whether two sequences contain equal values.
+// [Filter] and [Filter2] filter a sequence according to a function f.
+// [Limit] and [Limit2] truncate a sequence after n items.
+// [Map] and [Map2] apply a function f to a sequence.
+// [Merge], [Merge2], [MergeFunc], and [MergeFunc2] merge two ordered sequences.
+// [Reduce] and [Reduce2] combine the values in a sequence.
+// [Zip] and [Zip2] iterate over two sequences in parallel.
 package xiter
 
 import (

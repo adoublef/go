@@ -3,6 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package unixmilli provides functionality for working with Unix timestamps in milliseconds.
 package unixmilli
 
 import (

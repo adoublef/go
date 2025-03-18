@@ -3,6 +3,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package cache provides a generic in-memory LRU (Least Recently Used) cache implementation.
+// The cache stores any Go value by serializing it to bytes using MessagePack encoding,
+// making it suitable for a wide variety of data types.
 package cache
 
 import (
@@ -13,6 +16,7 @@ import (
 	"go.adoublef.dev/container/lru"
 )
 
+// Cache is a generic LRU cache that can store any value type.
 type Cache[V any] struct {
 	mu         sync.RWMutex
 	nbytes     int64                    // of all keys and values
@@ -21,6 +25,8 @@ type Cache[V any] struct {
 	nevict     int64 // number of evictions
 }
 
+// Add inserts a key-value pair into the cache. If the key already exists, its value
+// is updated. Returns an error if the value cannot be serialized.
 func (c *Cache[V]) Add(key string, value V) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -42,6 +48,8 @@ func (c *Cache[V]) Add(key string, value V) error {
 	return nil
 }
 
+// Get retrieves a value from the cache by its key. Returns the value and a boolean
+// indicating whether the key was found.
 func (c *Cache[V]) Get(key string) (value V, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -59,6 +67,7 @@ func (c *Cache[V]) Get(key string) (value V, ok bool) {
 	return value, true
 }
 
+// Remove deletes an item from the cache by its key.
 func (c *Cache[V]) Remove(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -67,6 +76,7 @@ func (c *Cache[V]) Remove(key string) {
 	}
 }
 
+// RemoveOldest removes the least recently used item from the cache.
 func (c *Cache[V]) RemoveOldest() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -75,6 +85,8 @@ func (c *Cache[V]) RemoveOldest() {
 	}
 }
 
+// Bytes returns the approximate memory usage of the cache in bytes, including both
+// keys and serialized values.
 func (c *Cache[V]) Bytes() int64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -82,6 +94,7 @@ func (c *Cache[V]) Bytes() int64 {
 	return c.nbytes
 }
 
+// Items returns the number of items currently stored in the cache.
 func (c *Cache[V]) Items() int64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

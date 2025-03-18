@@ -3,6 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package batchque provides functionality for managing and canceling batches of requests.
 package batchque
 
 import (
@@ -13,6 +14,7 @@ import (
 	"go.adoublef.dev/runtime/debug"
 )
 
+// Group is a generic type that manages batching of requests. It collects individual requests with the same input and output types, groups them together, and processes them in batches using a provided function.
 type Group[In, Out any] struct {
 	wg       sync.WaitGroup
 	init     sync.Once
@@ -21,6 +23,8 @@ type Group[In, Out any] struct {
 	closed   atomic.Bool
 }
 
+// Do submits a request with the given key to be processed in a batch.
+// It returns the result of processing the request or an error.
 func (g *Group[In, Out]) Do(ctx context.Context, key In, f func(context.Context, []Request[In, Out])) (Out, error) {
 	if g.closed.Load() {
 		return *new(Out), ErrClosed
@@ -104,24 +108,28 @@ func runLoop[In, Out any](g *Group[In, Out], f func(context.Context, []Request[I
 	}
 }
 
-func (g *Group[In, Out]) Close() error {
+// Stop shuts down the Group's processing loop and waits for it to complete. Once closed, no new requests can be accepted.
+// This method is safe to call multiple times.
+func (g *Group[In, Out]) Stop() {
 	if g.closed.CompareAndSwap(false, true) {
 		if g.quit != nil {
 			close(g.quit)
 		}
 		g.wg.Wait()
 	}
-	return nil
 }
 
-// Request is just a channel absctraction
+// Request represents a single operation within a batch. It contains the input value,
+// a channel to receive the result, and context management for cancellation.
 type Request[V, R any] struct {
-	Val        V
-	C          chan<- R // public
-	ctx        context.Context
+	Val        V        // Input
+	C          chan<- R // Result
 	CancelFunc context.CancelCauseFunc
+	ctx        context.Context
 }
 
+// Context returns the context associated with this request.
+// If no context was provided, it returns context.Background().
 func (r Request[V, R]) Context() context.Context {
 	if r.ctx == nil {
 		return context.Background()

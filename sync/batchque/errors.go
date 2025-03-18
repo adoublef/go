@@ -10,6 +10,8 @@ import (
 	"sync"
 )
 
+// CancelFunc cancels a batch of requests by concurrently calling
+// the CancelFunc method on each request.
 func CancelFunc[K comparable, V any](err error, rr []Request[K, V]) {
 	var wg sync.WaitGroup
 	wg.Add(len(rr))

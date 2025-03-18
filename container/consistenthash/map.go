@@ -25,6 +25,7 @@ func (hf HashFunc) Hash(b []byte) uint32 {
 	return hf(b)
 }
 
+// Map implements consistent hashing ring.
 type Map struct {
 	Hasher Hasher
 	k      int   // k number of sets
@@ -179,6 +180,7 @@ func (m *Map) ReadFrom(r io.Reader) (n int64, err error) {
 	return n, nil
 }
 
+// New creates a new [Map].
 func New(k int, h Hasher) *Map {
 	assert(k > 0, "k must be greater than zero")
 	assert(h != nil, "hasher cannot be nil")

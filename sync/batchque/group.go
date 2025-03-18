@@ -9,27 +9,29 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
+
+	"go.adoublef.dev/runtime/debug"
 )
 
-type Group[K comparable, R any] struct {
+type Group[In, Out any] struct {
 	wg       sync.WaitGroup
 	init     sync.Once
-	requests chan Request[K, R]
+	requests chan Request[In, Out]
 	quit     chan struct{}
 	closed   atomic.Bool
 }
 
-func (g *Group[K, R]) Do(ctx context.Context, key K, f func(context.Context, []Request[K, R])) (R, error) {
+func (g *Group[In, Out]) Do(ctx context.Context, key In, f func(context.Context, []Request[In, Out])) (Out, error) {
 	if g.closed.Load() {
-		return *new(R), ErrClosed
+		return *new(Out), ErrClosed
 	}
 	g.init.Do(runLoop(g, f))
 
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
-	c := make(chan R, 1)
-	r := Request[K, R]{
+	c := make(chan Out, 1)
+	r := Request[In, Out]{
 		Val:        key,
 		C:          c,
 		CancelFunc: cancel,
@@ -39,17 +41,17 @@ func (g *Group[K, R]) Do(ctx context.Context, key K, f func(context.Context, []R
 	select {
 	case g.requests <- r: // was able to put it on the batch queue
 	case <-ctx.Done():
-		return *new(R), context.Cause(ctx)
+		return *new(Out), context.Cause(ctx)
 	}
 	select {
 	case res := <-c:
 		return res, nil
 	case <-ctx.Done():
-		return *new(R), context.Cause(ctx)
+		return *new(Out), context.Cause(ctx)
 	}
 }
 
-func runLoop[K comparable, R any](g *Group[K, R], f func(context.Context, []Request[K, R])) func() {
+func runLoop[In, Out any](g *Group[In, Out], f func(context.Context, []Request[In, Out])) func() {
 	merge := func(ss []func() bool, ctx context.Context, cancel context.CancelFunc, n *atomic.Int64) []func() bool {
 		n.Add(1)
 		return append(ss, context.AfterFunc(ctx, func() {
@@ -60,14 +62,14 @@ func runLoop[K comparable, R any](g *Group[K, R], f func(context.Context, []Requ
 	}
 
 	return func() {
-		g.requests = make(chan Request[K, R], 16) // backpressure?
+		g.requests = make(chan Request[In, Out], 16) // backpressure?
 		g.quit = make(chan struct{})
 
 		g.wg.Add(1)
 		go func() {
 			defer g.wg.Done()
-			rr := make([]Request[K, R], 0, 1<<10) // =1kb
-			ss := make([]func() bool, 0, 1<<10)   // =1kb
+			rr := make([]Request[In, Out], 0, 1<<10) // =1kb
+			ss := make([]func() bool, 0, 1<<10)      // =1kb
 			for {
 				ctx, cancel := context.WithCancel(context.Background())
 				var n atomic.Int64
@@ -85,6 +87,7 @@ func runLoop[K comparable, R any](g *Group[K, R], f func(context.Context, []Requ
 							break EMPTY
 						}
 					}
+					debug.Printf("sync/batchque: %d = len(rr)", len(rr))
 					f(ctx, rr)
 					for _, stop := range ss {
 						stop()
@@ -101,7 +104,7 @@ func runLoop[K comparable, R any](g *Group[K, R], f func(context.Context, []Requ
 	}
 }
 
-func (g *Group[K, V]) Close() error {
+func (g *Group[In, Out]) Close() error {
 	if g.closed.CompareAndSwap(false, true) {
 		if g.quit != nil {
 			close(g.quit)

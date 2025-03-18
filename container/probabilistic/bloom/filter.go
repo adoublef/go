@@ -3,6 +3,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package bloom implements a Bloom filter, a space-efficient probabilistic
+// data structure used to test whether an element is a member of a set.
 package bloom
 
 import (
@@ -14,6 +16,7 @@ import (
 	"go.adoublef.dev/container/set"
 )
 
+// Filter represents a Bloom filter.
 type Filter struct {
 	Hasher Hasher
 	m      int // m size of bitset
@@ -21,23 +24,25 @@ type Filter struct {
 	set    set.BitUint8
 }
 
+// Set adds an element to the Bloom filter.
 func (f *Filter) Set(v string) {
 	// Double Hashing
 	h := f.Hasher.Hash([]byte(v))
 	u := uint32(h /* & 0xffffffff */)
 	l := uint32((h >> 32) /* & 0xffffffff */)
-	for i := 0; i < f.k; i++ {
+	for i := range f.k {
 		h := (l + u*uint32(i)) % uint32(f.m)
 		f.set.Set(int(h), true)
 	}
 }
 
+// Has tests if an element might be in the set.
 func (f *Filter) Has(v string) bool {
 	// Double Hashing
 	h := f.Hasher.Hash([]byte(v))
 	u := uint32(h /* & 0xffffffff */)
 	l := uint32((h >> 32) /* & 0xffffffff */)
-	for i := 0; i < f.k; i++ {
+	for i := range f.k {
 		h := (l + u*uint32(i)) % uint32(f.m)
 		if !f.set.Has(int(h)) {
 			return false
@@ -46,6 +51,7 @@ func (f *Filter) Has(v string) bool {
 	return true
 }
 
+// WriteTo implements io.WriterTo.
 func (f Filter) WriteTo(w io.Writer) (n int64, err error) {
 	m := int64(f.m)
 	err = binary.Write(w, binary.LittleEndian, &m)
@@ -66,6 +72,7 @@ func (f Filter) WriteTo(w io.Writer) (n int64, err error) {
 	return n, err
 }
 
+// ReadFrom implements io.ReaderFrom.
 func (f *Filter) ReadFrom(r io.Reader) (n int64, err error) {
 	var m int64
 	err = binary.Read(r, binary.LittleEndian, &m)
@@ -88,6 +95,8 @@ func (f *Filter) ReadFrom(r io.Reader) (n int64, err error) {
 	return n, err
 }
 
+// NewFilter creates a new Bloom filter optimized for n items with a
+// false positive probability p using the provided hash function.
 func NewFilter(n int, p float64, hf Hasher) *Filter {
 	assert(n > 0, "n must be positive")
 	assert(p > 0 && p < 1, "p must be exclusively between 0 and 1")
@@ -99,12 +108,15 @@ func NewFilter(n int, p float64, hf Hasher) *Filter {
 	return &Filter{m: int(m), k: int(k), set: bs, Hasher: hf}
 }
 
+// Hasher defines an interface for hash functions that produce uint64 values.
 type Hasher interface {
 	Hash(b []byte) uint64
 }
 
+// HashFunc is a function type that implements the Hasher interface.
 type HashFunc func(b []byte) uint64
 
+// Hash implements the Hasher interface for HashFunc.
 func (hf HashFunc) Hash(b []byte) uint64 {
 	return hf(b)
 }

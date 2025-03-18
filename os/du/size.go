@@ -3,7 +3,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package du
+// Package du provides disk usage measurement representation.
+// It defines a Size type (uint64) that can be converted to and from
+// human-readable strings with units (K, M, G, etc.).
 package du
 
 import (
@@ -19,6 +21,9 @@ const (
 	K
 	M
 	G
+	T
+	P
+	E
 )
 
 func (s Size) Int() int { return int(s) }
@@ -53,7 +58,6 @@ func ParseSize(s string) (Size, error) {
 	if err != nil {
 		return 0, fmt.Errorf("invalid number format: %s", err)
 	}
-
 	var multi Size
 	switch unit {
 	case "", "b", "B": // Bytes
@@ -64,6 +68,12 @@ func ParseSize(s string) (Size, error) {
 		multi = M
 	case "g", "G", "gb", "GB":
 		multi = G
+	case "t", "T", "tb", "TB":
+		multi = T
+	case "p", "P", "pb", "PB":
+		multi = P
+	case "e", "E", "eb", "EB":
+		multi = E
 	default:
 		return 0, fmt.Errorf("unknown size unit: %s", unit)
 	}

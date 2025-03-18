@@ -14,7 +14,9 @@ import (
 	"github.com/nats-io/nats-server/v2/server"
 )
 
-// ForNATS
+// ForNATS waits for a NATS server to become ready within the specified timeout.
+// It uses exponential backoff to check the server status until it's available
+// or the context is canceled.
 func ForNATS(ctx context.Context, ns *server.Server, timeout time.Duration) error {
 	o := func() error {
 		if !ns.ReadyForConnections(10 * time.Millisecond) {

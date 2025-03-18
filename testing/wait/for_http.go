@@ -14,7 +14,9 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
-// ForHTTP
+// ForHTTP waits for an HTTP endpoint to become available within the specified timeout.
+// It uses exponential backoff to retry requests until the endpoint responds successfully
+// or the context is canceled.
 func ForHTTP(ctx context.Context, timeout time.Duration, endpoint string, opts ...func(*http.Request)) error {
 	c := &http.Client{}
 	o := func() error {

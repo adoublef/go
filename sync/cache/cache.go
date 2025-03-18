@@ -49,6 +49,7 @@ func (c *Cache[V]) Get(key string) (value V, ok bool) {
 	if c.lru == nil {
 		return
 	}
+	// todo: batch get?
 	vi, ok := c.lru.Get(key)
 	if !ok {
 		return
@@ -56,6 +57,14 @@ func (c *Cache[V]) Get(key string) (value V, ok bool) {
 	c.nhit++
 	value, _ = unmarshal[V](vi)
 	return value, true
+}
+
+func (c *Cache[V]) Remove(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.lru != nil {
+		c.lru.Remove(key)
+	}
 }
 
 func (c *Cache[V]) RemoveOldest() {

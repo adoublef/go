@@ -3,6 +3,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package consistenthash provides an implementation of consistent hashing.
 package consistenthash
 
 import (
@@ -11,14 +12,17 @@ import (
 	"io"
 )
 
+// Hasher defines an interface for hash functions that produce uint32 values.
 type Hasher interface {
-	Hash(data []byte) uint32
+	Hash(b []byte) uint32
 }
 
-type HashFunc func(data []byte) uint32
+// HashFunc is a function type that implements the Hasher interface.
+type HashFunc func(b []byte) uint32
 
-func (hf HashFunc) Hash(data []byte) uint32 {
-	return hf(data)
+// Hash implements the Hasher interface for HashFunc.
+func (hf HashFunc) Hash(b []byte) uint32 {
+	return hf(b)
 }
 
 type Map struct {
@@ -31,7 +35,7 @@ type Map struct {
 // Add adds some keys to the hash.
 func (m *Map) Add(keys ...string) {
 	for _, key := range keys {
-		for i := 0; i < m.k; i++ {
+		for i := range m.k {
 			h := int(m.Hasher.Hash([]byte((itoa(i) + key))))
 			j := len(m.keys)
 			m.keys = append(m.keys, h)
@@ -64,6 +68,7 @@ func (m *Map) IsEmpty() bool {
 	return len(m.keys) == 0
 }
 
+// WriteTo implements io.WriterTo.
 func (m Map) WriteTo(w io.Writer) (n int64, err error) {
 	k := int64(m.k)
 	err = binary.Write(w, binary.LittleEndian, k)
@@ -113,6 +118,7 @@ func (m Map) WriteTo(w io.Writer) (n int64, err error) {
 	return n, nil
 }
 
+// ReadFrom implements io.ReaderFrom.
 func (m *Map) ReadFrom(r io.Reader) (n int64, err error) {
 	var k int64
 	err = binary.Read(r, binary.LittleEndian, &k)

@@ -25,7 +25,7 @@ type entry[K comparable, V any] struct {
 	value V
 }
 
-// New creates a new Cache.
+// New creates a new [LRU].
 // If maxEntries is zero, the cache has no limit and it's assumed
 // that eviction is done by the caller.
 func New[K comparable, V any](maxEntries int) *LRU[K, V] {

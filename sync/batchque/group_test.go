@@ -23,7 +23,7 @@ func TestGroup_Do(t *testing.T) {
 
 		ctx := t.Context()
 		t.Cleanup(func() {
-			g.Close() // should close
+			g.Stop() // should close
 		})
 
 		// Make concurrent requests
@@ -59,14 +59,14 @@ func TestGroup_Do(t *testing.T) {
 			is.Equal(t, results[i], len(input))
 		}
 
-		// g.Close() // should close
+		// g.Stop() // should close
 	})
 
 	t.Run("Large", func(t *testing.T) {
 		var g Group[int, int]
 		ctx := context.Background()
 		t.Cleanup(func() {
-			g.Close() // should close
+			g.Stop() // should close
 		})
 
 		// Launch 2000 concurrent requests (more than fixed array size)
@@ -84,14 +84,14 @@ func TestGroup_Do(t *testing.T) {
 			}()
 		}
 		wg.Wait()
-		// g.Close()
+		// g.Stop()
 	})
 
 	t.Run("CancelFunc", func(t *testing.T) {
 		var g Group[int, int]
 		ctx := context.Background()
 		t.Cleanup(func() {
-			g.Close() // should close
+			g.Stop() // should close
 		})
 
 		// Test data: even numbers will succeed, odd numbers will error

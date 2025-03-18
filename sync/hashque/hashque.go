@@ -13,6 +13,7 @@ import (
 	"go.adoublef.dev/runtime/debug"
 )
 
+// ValueFunc executes a function that returns a single value.
 func ValueFunc[K comparable, T any](g *Group[K], key K, f func() T) T {
 	c := make(chan T)
 	g.Do(key, func() {
@@ -22,6 +23,8 @@ func ValueFunc[K comparable, T any](g *Group[K], key K, f func() T) T {
 	return <-c
 }
 
+// TryValueFunc attempts to execute a function that returns a single value, without blocking if the
+// channel is full. It returns the value and a boolean indicating success.
 func TryValueFunc[K comparable, V any](g *Group[K], key K, f func() V) (V, bool) {
 	c := make(chan V, 1)
 	ok := g.TryDo(key, func() {
@@ -31,11 +34,13 @@ func TryValueFunc[K comparable, V any](g *Group[K], key K, f func() V) (V, bool)
 	return <-c, ok
 }
 
+// Result encapsulates the return value and error from a function call.
 type Result[V any] struct {
 	Val V
 	Err error
 }
 
+// ResultFunc executes a function that returns a value and an error.
 func ResultFunc[K comparable, T any](g *Group[K], key K, f func() (T, error)) (T, error) {
 	c := make(chan Result[T])
 	g.Do(key, func() {
@@ -48,8 +53,10 @@ func ResultFunc[K comparable, T any](g *Group[K], key K, f func() (T, error)) (T
 	return r.Val, r.Err
 }
 
+// ResultChan executes a function that returns a value and an error, and returns a channel that will
+// receive the result. This allows for non-blocking usage patterns.
 func ResultChan[K comparable, V any](g *Group[K], key K, f func() (V, error)) <-chan Result[V] {
-	// should maybe add a way to cancel this?
+	// NOTE: should maybe add a way to cancel this?
 	res := make(chan Result[V], 1)
 	g.Do(key, func() {
 		defer close(res)
@@ -65,17 +72,23 @@ type call struct {
 	count int64
 }
 
+// Group provides a mechanism to deduplicate function calls by key. When multiple goroutines
+// call functions with the same key concurrently, only one execution occurs while all callers
+// receive the result of that execution.
 type Group[K comparable] struct {
 	mu sync.Mutex
 	m  map[K]*call
 }
 
+// Do executes the given function once for each key, blocking until the function completes.
 func (g *Group[K]) Do(key K, f func()) {
 	c := g.loadCall(key)
 
 	c.funcs <- f
 }
 
+// TryDo attempts to queue the given function for execution but doesn't block if the channel
+// is full. It returns a boolean indicating whether the function was successfully queued.
 func (g *Group[K]) TryDo(key K, f func()) bool {
 	c := g.loadCall(key)
 

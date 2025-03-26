@@ -21,8 +21,8 @@ type Key interface {
 	~string | ~[]byte | ~[12]byte | ~[16]byte
 }
 
-// Cache is a generic LRU cache that can store any value type.
-type Cache[K Key, V any] struct {
+// LRU is a generic LRU cache that can store any value type.
+type LRU[K Key, V any] struct {
 	mu         sync.RWMutex
 	nbytes     int64               // of all keys and values
 	lru        *lru.LRU[K, []byte] // any value should be allowed
@@ -32,7 +32,7 @@ type Cache[K Key, V any] struct {
 
 // Add inserts a key-value pair into the cache. If the key already exists, its value
 // is updated. Returns an error if the value cannot be serialized.
-func (c *Cache[K, V]) Add(key K, value V) error {
+func (c *LRU[K, V]) Add(key K, value V) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.lru == nil {
@@ -55,7 +55,7 @@ func (c *Cache[K, V]) Add(key K, value V) error {
 
 // Get retrieves a value from the cache by its key. Returns the value and a boolean
 // indicating whether the key was found.
-func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
+func (c *LRU[K, V]) Get(key K) (value V, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.nget++
@@ -73,7 +73,7 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 }
 
 // Remove deletes an item from the cache by its key.
-func (c *Cache[K, V]) Remove(key K) {
+func (c *LRU[K, V]) Remove(key K) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.lru != nil {
@@ -82,7 +82,7 @@ func (c *Cache[K, V]) Remove(key K) {
 }
 
 // RemoveOldest removes the least recently used item from the cache.
-func (c *Cache[K, V]) RemoveOldest() {
+func (c *LRU[K, V]) RemoveOldest() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.lru != nil {
@@ -92,7 +92,7 @@ func (c *Cache[K, V]) RemoveOldest() {
 
 // Bytes returns the approximate memory usage of the cache in bytes, including both
 // keys and serialized values.
-func (c *Cache[K, V]) Bytes() int64 {
+func (c *LRU[K, V]) Bytes() int64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	// if this is generic can we still get the size of the cache?
@@ -100,13 +100,13 @@ func (c *Cache[K, V]) Bytes() int64 {
 }
 
 // Items returns the number of items currently stored in the cache.
-func (c *Cache[K, V]) Items() int64 {
+func (c *LRU[K, V]) Items() int64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.itemsLocked()
 }
 
-func (c *Cache[K, V]) itemsLocked() int64 {
+func (c *LRU[K, V]) itemsLocked() int64 {
 	if c.lru == nil {
 		return 0
 	}

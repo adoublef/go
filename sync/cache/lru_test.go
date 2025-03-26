@@ -14,7 +14,7 @@ import (
 func Test_Cache_Get(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		// 1.
-		var c Cache[string, string]
+		var c LRU[string, string]
 		// 1. add the value
 		c.Add("1", "Hello")
 		// 2. get the value
@@ -37,7 +37,7 @@ func Test_Cache_Get(t *testing.T) {
 		}
 
 		// 1.
-		var c Cache[string, simple]
+		var c LRU[string, simple]
 		// 1. add the value
 		_ = c.Add("1", simple{23, ""})
 		// 2. get the value

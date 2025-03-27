@@ -111,6 +111,36 @@ func (g *Group[K]) TryDo(key K, f func()) bool {
 	}
 }
 
+// DoContext attempts to queue the given function for execution but returns error if the context
+// is canceled.
+func (g *Group[K]) DoContext(ctx context.Context, key K, f func()) error {
+	select {
+	case <-ctx.Done:
+		return ctx.Err()
+	default:
+	}
+	c := g.loadCall(key)
+
+	select {
+	case c.funcs <- f:
+		return nil
+	case <-ctx.Done():
+		func() {
+			g.mu.Lock()
+			defer g.mu.Unlock()
+
+			if c.count--; c.count == 0 {
+				// we're the last waiter therefore
+				// closing the channel is ok.
+				delete(g.m, key)
+				close(c.funcs)
+			}
+		}()
+		return context.Cause(ctx)
+	}
+}
+
+
 func (g *Group[K]) loadCall(key K) *call {
 	g.mu.Lock()
 	if g.m == nil {

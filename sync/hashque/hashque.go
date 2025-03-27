@@ -116,7 +116,7 @@ func (g *Group[K]) TryDo(key K, f func()) bool {
 // is canceled.
 func (g *Group[K]) DoContext(ctx context.Context, key K, f func()) error {
 	select {
-	case <-ctx.Done:
+	case <-ctx.Done():
 		return ctx.Err()
 	default:
 	}

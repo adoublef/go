@@ -8,6 +8,7 @@
 package hashque
 
 import (
+	"context"
 	"sync"
 
 	"go.adoublef.dev/runtime/debug"

@@ -8,6 +8,7 @@
 package hashque
 
 import (
+	"context"
 	"sync"
 
 	"go.adoublef.dev/runtime/debug"
@@ -108,6 +109,32 @@ func (g *Group[K]) TryDo(key K, f func()) bool {
 			}
 		}()
 		return false
+	}
+}
+
+// DoContext attempts to queue the given function for execution but doesn't block if the channel
+// is full. It returns an error if the context is cancelled or if the queue is full.
+// The key parameter determines which worker the function will be queued to.
+func (g *Group[K]) DoContext(ctx context.Context, key K, f func()) error {
+	// this could need context?
+	c := g.loadCall(key)
+
+	select {
+	case c.funcs <- f:
+		return nil
+	case <-ctx.Done():
+		func() {
+			g.mu.Lock()
+			defer g.mu.Unlock()
+
+			if c.count--; c.count == 0 {
+				// we're the last waiter therefore
+				// closing the channel is ok.
+				delete(g.m, key)
+				close(c.funcs)
+			}
+		}()
+		return ctx.Err()
 	}
 }
 

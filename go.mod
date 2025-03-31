@@ -1,7 +1,6 @@
 module go.adoublef.dev
 
 go 1.24.0
-
 require (
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -12,7 +11,7 @@ require (
 	github.com/prometheus/client_golang v1.21.1
 	github.com/rs/zerolog v1.34.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	golang.org/x/net v0.33.0
+	golang.org/x/net v0.38.0
 	maragu.dev/migrate v0.6.0
 )
 

@@ -1,13 +1,14 @@
 module go.adoublef.dev
 
 go 1.24.0
+
 require (
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/google/uuid v1.6.0
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-sqlite3 v1.14.27
-	github.com/nats-io/nats-server/v2 v2.11.0
+	github.com/nats-io/nats-server/v2 v2.11.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1

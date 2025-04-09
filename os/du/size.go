@@ -9,6 +9,7 @@
 package du
 
 import (
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"strconv"
@@ -39,6 +40,66 @@ func (s Size) String() string {
 	}
 	// NOTE look to using strings.Builder instead
 	return fmt.Sprintf("%.2f%c", float64(s)/float64(div), "KMGTPE"[exp])
+}
+
+// Set implements the flag.Value interface
+func (s *Size) Set(value string) (err error) {
+	*s, err = ParseSize(value)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Scan implements the sql.Scanner interface for database deserialization
+func (s *Size) Scan(src any) (err error) {
+	switch v := src.(type) {
+	case int64: // can other values be used?
+		*s = Size(v)
+		return nil
+	case []byte, string:
+		// Parse string representations
+		var str string
+		if strBytes, ok := v.([]byte); ok {
+			str = string(strBytes)
+		} else {
+			str = v.(string)
+		}
+		if val, err := strconv.ParseUint(str, 10, 64); err == nil {
+			*s = Size(val)
+			return nil
+		}
+		*s, err = ParseSize(str)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return fmt.Errorf("unsupported type %T for Size", src)
+	}
+}
+
+// Value implements the driver.Valuer interface for database serialization
+func (s Size) Value() (driver.Value, error) {
+	return int64(s), nil
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface
+func (s *Size) UnmarshalText(text []byte) (err error) {
+	if val, err := strconv.ParseUint(string(text), 10, 64); err == nil {
+		*s = Size(val)
+		return nil
+	}
+	*s, err = ParseSize(string(text))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalText implements the encoding.TextMarshaler interface
+func (s Size) MarshalText() ([]byte, error) {
+	return []byte(strconv.FormatUint(uint64(s), 10)), nil
 }
 
 func ParseSize(s string) (Size, error) {

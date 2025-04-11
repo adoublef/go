@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"testing"
 
-	"go.adoublef.dev/xiota"
 	. "go.adoublef.dev/xiota"
 )
 
@@ -242,7 +241,7 @@ func TestParse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			switch tt.expectedType.(type) {
 			case Direction:
-				result, err := xiota.Parse[Direction](tt.names, tt.input, tt.offset)
+				result, err := Parse[Direction](tt.names, tt.input, tt.offset)
 
 				if (err != nil) != tt.wantErr {
 					t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
@@ -254,7 +253,7 @@ func TestParse(t *testing.T) {
 				}
 
 			case Month:
-				result, err := xiota.Parse[Month](tt.names, tt.input, tt.offset)
+				result, err := Parse[Month](tt.names, tt.input, tt.offset)
 
 				if (err != nil) != tt.wantErr {
 					t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)

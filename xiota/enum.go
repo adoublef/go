@@ -3,6 +3,30 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Copyright 2009 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package xiota provides tools for creating and handling iota-like enumerated constants.
+//
+//	type Month int
+//
+//	const (
+//		January Month = iota + 1
+//		February
+//		March
+//		// ...and so on
+//	)
+//
+//	var longMonthNames = []string{
+//		"January", "February", "March",
+//		// ...and so on
+//	}
+//
+//	// Implement fmt.Stringer interface with just one line
+//	func (m Month) String() string {
+//		return Format(m, longMonthNames, January, December, January-1)
+//	}
 package xiota
 
 import (
@@ -40,7 +64,7 @@ func lookup(tab []string, val string) (int, string, error) {
 			return i, val[len(v):], nil
 		}
 	}
-	return -1, val, errors.New("bad value for field")
+	return -1, val, errBad
 }
 
 // Parse
@@ -52,13 +76,15 @@ func Parse[T Number](tab []string, val string, offset int) (T, error) {
 	return T(c + offset), nil
 }
 
-// Format formats v into the tail of buf.
-// It returns the string where the output begins.
-func Format[T Number](buf []byte, v T) string {
-	if buf == nil {
-		buf = make([]byte, 20)
+// Formatting formats v into the name.
+func Format[T Number](value T, names []string, min, max, offset T) string {
+	if min <= value && value <= max {
+		return names[value-offset-1]
 	}
+
+	buf := make([]byte, 20)
 	w := len(buf)
+	v := value
 	if v == 0 {
 		w--
 		buf[w] = '0'
@@ -75,3 +101,5 @@ func Format[T Number](buf []byte, v T) string {
 	}
 	return "%!" + t + "(" + string(buf[w:]) + ")"
 }
+
+var errBad = errors.New("bad value for field") // placeholder not passed to user

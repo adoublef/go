@@ -13,7 +13,7 @@ import (
 
 func ExampleFormat() {
 	type A uint
-	fmt.Println(Format[A](nil, 2))
+	fmt.Println(Format[A](2, []string(nil), 0, 0, 0))
 	// Output:
 	// 	%!A(2)
 }

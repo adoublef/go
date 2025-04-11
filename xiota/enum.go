@@ -79,7 +79,7 @@ func Parse[T Number](tab []string, val string, offset int) (T, error) {
 // Formatting formats v into the name.
 func Format[T Number](value T, names []string, min, max, offset T) string {
 	if min <= value && value <= max {
-		return names[value-offset-1]
+		return names[value-offset]
 	}
 
 	buf := make([]byte, 20)

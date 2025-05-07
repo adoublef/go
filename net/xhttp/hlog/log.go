@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"go.adoublef.dev/net/http/httputil"
+	"go.adoublef.dev/net/xhttp"
 )
 
 type contextKey struct{ string }
@@ -28,7 +28,7 @@ var (
 func LogHandler(h http.Handler, sl *slog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		l := newLogger(sl, r)
-		ww := httputil.Wrap(w, r)
+		ww := xhttp.Wrap(w, r)
 
 		buf := newLimitBuffer(512)
 		ww.Tee(buf)

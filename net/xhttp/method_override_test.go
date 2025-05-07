@@ -3,14 +3,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package httputil_test
+package xhttp_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	. "go.adoublef.dev/net/http/httputil"
+	. "go.adoublef.dev/net/xhttp"
 	"go.adoublef.dev/testing/is"
 )
 

@@ -26,11 +26,11 @@ import (
 func Decode[V any](w http.ResponseWriter, r *http.Request, sz int, d time.Duration) (V, error) {
 	var v V
 	if r.Body == nil {
-		return v, newDecodeErr(http.StatusUnauthorized, "request body could not be read properly")
+		return v, fmtDecodeError(http.StatusUnauthorized, "request body could not be read properly")
 	}
 	mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || !(mt == "application/json") {
-		return v, newDecodeErr(http.StatusUnsupportedMediaType, "request body could not be read properly")
+		return v, fmtDecodeError(http.StatusUnsupportedMediaType, "request body could not be read properly")
 	}
 	if sz > 0 {
 		r.Body = http.MaxBytesReader(w, r.Body, int64(sz))
@@ -60,26 +60,26 @@ func Decode[V any](w http.ResponseWriter, r *http.Request, sz int, d time.Durati
 		case errors.As(err, new(*json.SyntaxError)):
 			se := err.(*json.SyntaxError)
 			ch, _ := utf8.DecodeRune([]byte(se.Error()[19:]))
-			return zero, newDecodeErr(http.StatusBadRequest, "invalid character '%c' at position %d", ch, se.Offset)
+			return zero, fmtDecodeError(http.StatusBadRequest, "invalid character '%c' at position %d", ch, se.Offset)
 		case errors.As(err, new(*json.UnmarshalTypeError)):
 			e := err.(*json.UnmarshalTypeError)
-			return zero, newDecodeErr(http.StatusBadRequest, "unexpected %s for field %q at position %d", e.Value, e.Field, e.Offset)
+			return zero, fmtDecodeError(http.StatusBadRequest, "unexpected %s for field %q at position %d", e.Value, e.Field, e.Offset)
 		// There is an open issue at https://github.com/golang/go/issues/29035
 		// regarding turning this into a sentinel error.
 		case strings.HasPrefix(err.Error(), "json: unknown field"):
-			return zero, newDecodeErr(http.StatusBadRequest, "unknown field %s", err.Error()[20:])
+			return zero, fmtDecodeError(http.StatusBadRequest, "unknown field %s", err.Error()[20:])
 		// An io.EOF error is returned by Decode() if the request body is empty.
 		case errors.Is(err, io.EOF):
-			return zero, newDecodeErr(http.StatusUnauthorized, "request body could not be read properly")
+			return zero, fmtDecodeError(http.StatusUnauthorized, "request body could not be read properly")
 		case errors.As(err, new(*http.MaxBytesError)):
-			return zero, newDecodeErr(http.StatusRequestEntityTooLarge, "maximum allowed request size is %d", sz)
+			return zero, fmtDecodeError(http.StatusRequestEntityTooLarge, "maximum allowed request size is %d", sz)
 		case errors.As(err, new(*net.OpError)):
-			return zero, newDecodeErr(http.StatusRequestTimeout, "failed to process request in time, please try again")
+			return zero, fmtDecodeError(http.StatusRequestTimeout, "failed to process request in time, please try again")
 
 		// Otherwise default to logging the error and sending a 500 Internal
 		// Server Error response. May want to wrap this error.
 		default:
-			return zero, newDecodeErr(http.StatusBadRequest, "encoding error: %v", err)
+			return zero, fmtDecodeError(http.StatusBadRequest, "encoding error: %v", err)
 		}
 	}
 	// note: log error as this will not be returned to the client
@@ -89,7 +89,7 @@ func Decode[V any](w http.ResponseWriter, r *http.Request, sz int, d time.Durati
 	// we know that there is additional data in the request body.
 	if err = dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
 		// fixme: 4xx
-		return *new(V), newDecodeErr(http.StatusBadRequest, "request body contains more than a single JSON object")
+		return *new(V), fmtDecodeError(http.StatusBadRequest, "request body contains more than a single JSON object")
 	}
 	return v, nil
 }
@@ -99,7 +99,6 @@ var ErrDecodeBody = errors.New("invalid decode")
 type DecodeError struct {
 	Code   int
 	Reason string
-	Err    error
 }
 
 func (e DecodeError) Error() string {
@@ -108,8 +107,6 @@ func (e DecodeError) Error() string {
 
 func (e DecodeError) Is(target error) bool { return target == ErrDecodeBody }
 
-func (e *DecodeError) Unwrap() error { return e.Err }
-
-func newDecodeErr(code int, format string, v ...any) error {
+func fmtDecodeError(code int, format string, v ...any) error {
 	return &DecodeError{Code: code, Reason: fmt.Sprintf(format, v...)}
 }

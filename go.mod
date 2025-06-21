@@ -1,6 +1,6 @@
 module go.adoublef.dev
 
-go 1.24.0
+go 1.24.3
 
 require (
 	github.com/Shopify/toxiproxy/v2 v2.12.0
@@ -19,6 +19,7 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect

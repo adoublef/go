@@ -56,6 +56,9 @@ const (
 	modeGoroutine
 )
 
+// Usage text for flag package.
+const Usage = "enable profiling mode, one of [cpu, mem, mutex, block]"
+
 type Profile struct {
 	// quiet suppresses informational messages during profiling.
 	quiet bool

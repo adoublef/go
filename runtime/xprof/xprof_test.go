@@ -211,9 +211,7 @@ func main() {
 // NoStdout checks that stdout was blank.
 func NoStdout(t *testing.T, stdout, _ []byte, _ error) {
 	t.Helper()
-	if len := len(stdout); len > 0 {
-		t.Errorf("stdout: wanted 0 bytes, got %d", len)
-	}
+	is.Equal(t, 0, len(stdout)) // stdout: wanted 0 bytes
 }
 
 // Stderr verifies that the given lines match the output from stderr
@@ -229,25 +227,19 @@ func Stderr(lines ...string) checkFn {
 // NoStderr checks that stderr was blank.
 func NoStderr(t *testing.T, _, stderr []byte, _ error) {
 	t.Helper()
-	if len := len(stderr); len > 0 {
-		t.Errorf("stderr: wanted 0 bytes, got %d", len)
-	}
+	is.Equal(t, 0, len(stderr)) // stderr: wanted 0 bytes
 }
 
 // Err checks that there was an error returned
 func Err(t *testing.T, _, _ []byte, err error) {
 	t.Helper()
-	if err == nil {
-		t.Errorf("expected error")
-	}
+	is.True(t, err != nil) // expected error
 }
 
 // NoErr checks that err was nil
 func NoErr(t *testing.T, _, _ []byte, err error) {
 	t.Helper()
-	if err != nil {
-		t.Errorf("error: expected nil, got %v", err)
-	}
+	is.OK(t, err) // unexpected error
 }
 
 // validatedOutput validates the given slice of lines against data from the given reader.

@@ -59,7 +59,7 @@ const (
 // Usage text for flag package.
 const Usage = "enable profiling mode, one of [cpu, mem, mutex, block]"
 
-type Profile struct {
+type Prof struct {
 	// quiet suppresses informational messages during profiling.
 	quiet bool
 	// noShutdownHook controls whether the profiling package should
@@ -83,14 +83,14 @@ type Profile struct {
 // Programs with more sophisticated signal handling should set
 // this to true and ensure the Stop() function returned from Start()
 // is called during shutdown.
-func NoShutdownHook(p *Profile) { p.noShutdownHook = true }
+func NoShutdownHook(p *Prof) { p.noShutdownHook = true }
 
 // Quiet suppresses informational messages during profiling.
-func Quiet(p *Profile) { p.quiet = true }
+func Quiet(p *Prof) { p.quiet = true }
 
 // CPU enables cpu profiling.
 // It disables any previous profiling settings.
-func CPU(p *Profile) { p.mode = modeCpu }
+func CPU(p *Prof) { p.mode = modeCpu }
 
 // DefaultMemProfileRate is the default memory profiling rate.
 // See also http://golang.org/pkg/runtime/#pkg-variables
@@ -98,15 +98,15 @@ const DefaultMemProfileRate = 4096
 
 // Mem enables memory profiling.
 // It disables any previous profiling settings.
-func Mem(p *Profile) {
+func Mem(p *Prof) {
 	p.memProfileRate = DefaultMemProfileRate
 	p.mode = modeMem
 }
 
 // MemRate enables memory profiling at the preferred rate.
 // It disables any previous profiling settings.
-func MemRate(rate int) func(*Profile) {
-	return func(p *Profile) {
+func MemRate(rate int) func(*Prof) {
+	return func(p *Prof) {
 		p.memProfileRate = rate
 		p.mode = modeMem
 	}
@@ -114,39 +114,39 @@ func MemRate(rate int) func(*Profile) {
 
 // MemHeap changes which type of memory profiling to profile
 // the heap.
-func MemHeap(p *Profile) {
+func MemHeap(p *Prof) {
 	p.memProfileType = "heap"
 	p.mode = modeMem
 }
 
 // MemAllocs changes which type of memory to profile
 // allocations.
-func MemAllocs(p *Profile) {
+func MemAllocs(p *Prof) {
 	p.memProfileType = "allocs"
 	p.mode = modeMem
 }
 
 // Mutex enables mutex profiling.
 // It disables any previous profiling settings.
-func Mutex(p *Profile) { p.mode = modeMutex }
+func Mutex(p *Prof) { p.mode = modeMutex }
 
 // Block enables block (contention) profiling.
 // It disables any previous profiling settings.
-func Block(p *Profile) { p.mode = modeBlock }
+func Block(p *Prof) { p.mode = modeBlock }
 
 // Trace profile enables execution tracing.
 // It disables any previous profiling settings.
-func Trace(p *Profile) { p.mode = modeTrace }
+func Trace(p *Prof) { p.mode = modeTrace }
 
 // Thread enables thread creation profiling..
 // It disables any previous profiling settings.
-func Thread(p *Profile) { p.mode = modeThreadCreate }
+func Thread(p *Prof) { p.mode = modeThreadCreate }
 
 // Go enables goroutine profiling.
 // It disables any previous profiling settings.
-func Go(p *Profile) { p.mode = modeGoroutine }
+func Go(p *Prof) { p.mode = modeGoroutine }
 
-func (p *Profile) Stop() {
+func (p *Prof) Stop() {
 	if !atomic.CompareAndSwapUint32(&p.stopped, 0, 1) {
 		return
 	}
@@ -160,14 +160,14 @@ var started uint32
 // Start starts a new profiling session.
 // The caller should call the Stop method on the value returned
 // to cleanly stop profiling.
-func Start(path string, options ...func(*Profile)) interface {
+func Start(path string, options ...func(*Prof)) interface {
 	Stop()
 } {
 	if !atomic.CompareAndSwapUint32(&started, 0, 1) {
 		log.Fatal("xprof: Start() already called")
 	}
 
-	var prof Profile
+	var prof Prof
 	for _, o := range options {
 		o(&prof)
 	}
@@ -176,7 +176,7 @@ func Start(path string, options ...func(*Profile)) interface {
 		if p := path; p != "" {
 			return p, os.MkdirAll(p, 0777)
 		}
-		return os.MkdirTemp("", "profile")
+		return os.MkdirTemp("", "xprof")
 	}()
 	if err != nil {
 		log.Fatalf("xprof: could not create initial output directory: %v", err)

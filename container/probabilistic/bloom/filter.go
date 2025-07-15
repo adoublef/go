@@ -13,7 +13,7 @@ import (
 	"io"
 	"math"
 
-	"go.adoublef.dev/container/set"
+	"go.adoublef.dev/container/bitset"
 )
 
 // Filter represents a Bloom filter.
@@ -21,7 +21,7 @@ type Filter struct {
 	Hasher Hasher
 	m      int // m size of bitset
 	k      int // k number of sets
-	set    set.BitUint8
+	set    bitset.BitUint8
 }
 
 // Set adds an element to the Bloom filter.
@@ -104,7 +104,7 @@ func NewFilter(n int, p float64, hf Hasher) *Filter {
 
 	m := math.Ceil((float64(n) * math.Log(p)) / math.Log(1/math.Pow(2, math.Log(2))))
 	k := math.Round((m / float64(n)) * math.Log(2))
-	bs := set.NewBitUint8(int(m * k)) //make([]uint8, (m*k+7)/8)
+	bs := bitset.NewBitUint8(int(m * k)) //make([]uint8, (m*k+7)/8)
 	return &Filter{m: int(m), k: int(k), set: bs, Hasher: hf}
 }
 

@@ -29,15 +29,12 @@ func Add[E any](set Set[E], seq iter.Seq[E]) {
 	}
 }
 
-// PS is implemented by a pointer type implementing the Set[E] interface.
-type PS[S, E any] interface {
-	*S
-	Set[E]
-}
-
 // Unique removes duplicate elements from the input sequence, yielding only
 // the first instance of any element.
-func Unique[E, S any, P PS[S, E]](input iter.Seq[E]) iter.Seq[E] {
+func Unique[E, S any, P interface {
+	*S
+	Set[E]
+}](input iter.Seq[E]) iter.Seq[E] {
 	return func(yield func(E) bool) {
 		// We convert to PS, as only that is constrained to have the methods.
 		// The conversion is allowed, because the type set of PS only contains *S.
@@ -70,13 +67,9 @@ func (s *TreeSet[E]) Add(element E) {
 	s.root.Add(element)
 }
 
-func (s *TreeSet[E]) Has(element E) bool {
-	return s.root.Has(element)
-}
+func (s *TreeSet[E]) Has(e E) bool { _, ok := s.elements[e]; return ok }
 
-func (s *TreeSet[E]) All() iter.Seq[E] {
-	return s.root.All()
-}
+func (s *TreeSet[E]) All() iter.Seq[E] { return s.root.All() }
 
 // OrderedSet
 //
@@ -108,11 +101,6 @@ type OrderedSet[E tree.OrderedComparer[E]] struct {
 	elements map[E]struct{}     // for (near) constant time lookup
 }
 
-func (s *OrderedSet[E]) Has(e E) bool {
-	_, ok := s.elements[e]
-	return ok
-}
-
 func (s *OrderedSet[E]) Add(e E) {
 	if s.elements == nil {
 		s.elements = make(map[E]struct{})
@@ -124,13 +112,13 @@ func (s *OrderedSet[E]) Add(e E) {
 	s.tree.Add(e)
 }
 
-func (s *OrderedSet[E]) All() iter.Seq[E] {
-	return s.tree.All()
-}
+func (s *OrderedSet[E]) Has(e E) bool { _, ok := s.elements[e]; return ok }
 
-type HashSet[E comparable] map[E]bool
+func (s *OrderedSet[E]) All() iter.Seq[E] { return s.tree.All() }
 
-func (s HashSet[E]) Add(v E)          { s[v] = true }
+type HashSet[E comparable] map[E]struct{}
+
+func (s HashSet[E]) Add(v E)          { s[v] = struct{}{} }
 func (s HashSet[E]) Delete(v E)       { delete(s, v) }
-func (s HashSet[E]) Has(v E) bool     { return s[v] }
+func (s HashSet[E]) Has(v E) bool     { _, ok := s[v]; return ok }
 func (s HashSet[E]) All() iter.Seq[E] { return maps.Keys(s) }

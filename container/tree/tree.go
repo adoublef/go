@@ -13,11 +13,6 @@ import (
 	"iter"
 )
 
-type OrderedComparer[E any] interface {
-	comparable // cmp.Ordered
-	Comparer[E]
-}
-
 type Comparer[T any] interface {
 	Compare(T) int
 }

@@ -29,12 +29,14 @@ func Add[E any](set Set[E], seq iter.Seq[E]) {
 	}
 }
 
-// Unique removes duplicate elements from the input sequence, yielding only
-// the first instance of any element.
-func Unique[E, S any, P interface {
+type setter[E, S any] interface {
 	*S
 	Set[E]
-}](input iter.Seq[E]) iter.Seq[E] {
+}
+
+// Unique removes duplicate elements from the input sequence, yielding only
+// the first instance of any element.
+func Unique[E, S any, P setter[E, S]](input iter.Seq[E]) iter.Seq[E] {
 	return func(yield func(E) bool) {
 		// We convert to PS, as only that is constrained to have the methods.
 		// The conversion is allowed, because the type set of PS only contains *S.
@@ -71,6 +73,11 @@ func (s *TreeSet[E]) Has(e E) bool { _, ok := s.elements[e]; return ok }
 
 func (s *TreeSet[E]) All() iter.Seq[E] { return s.root.All() }
 
+type Comparer[E any] interface {
+	comparable // cmp.Ordered
+	tree.Comparer[E]
+}
+
 // OrderedSet
 //
 //	type Player struct {
@@ -96,7 +103,7 @@ func (s *TreeSet[E]) All() iter.Seq[E] { return s.root.All() }
 //	for p := range s.All() {
 //	    fmt.Println(p)
 //	}
-type OrderedSet[E tree.OrderedComparer[E]] struct {
+type OrderedSet[E Comparer[E]] struct {
 	tree     tree.MethodTree[E] // for efficient iteration in order
 	elements map[E]struct{}     // for (near) constant time lookup
 }

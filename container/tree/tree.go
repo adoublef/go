@@ -13,10 +13,6 @@ import (
 	"iter"
 )
 
-type Comparer[T any] interface {
-	Compare(T) int
-}
-
 type node[E any] struct {
 	value E
 	left  *node[E]
@@ -81,6 +77,10 @@ func (t *Tree[E]) All() iter.Seq[E] {
 	return func(yield func(E) bool) {
 		t.root.all(yield)
 	}
+}
+
+type Comparer[T any] interface {
+	Compare(T) int
 }
 
 // The zero value of a MethodTree is a ready-to-use empty tree.

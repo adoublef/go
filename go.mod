@@ -7,7 +7,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/google/uuid v1.6.0
 	github.com/matryer/is v1.4.1
-	github.com/mattn/go-sqlite3 v1.14.28
+	github.com/mattn/go-sqlite3 v1.14.29
 	github.com/nats-io/nats-server/v2 v2.11.4
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0

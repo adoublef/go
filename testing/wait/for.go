@@ -30,5 +30,5 @@ func ForFunc(ctx context.Context, timeout time.Duration, f func() error) error {
 	return backoff.Retry(o, backoff.WithContext(bo, ctx))
 }
 
-//nolint:staticcheck
+//lint:ignore ST1012
 var NotReady = errors.New("not ready")

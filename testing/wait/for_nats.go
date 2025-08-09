@@ -9,7 +9,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/nats-io/nats-server/v2/server"
 )
 
@@ -17,12 +16,10 @@ import (
 // It uses exponential backoff to check the server status until it's available
 // or the context is canceled.
 func ForNATS(ctx context.Context, ns *server.Server, timeout time.Duration) error {
-	o := func() error {
+	return ForFunc(ctx, timeout, func() error {
 		if !ns.ReadyForConnections(10 * time.Millisecond) {
 			return NotReady
 		}
 		return nil
-	}
-	bo := backoff.NewExponentialBackOff(backoff.WithMaxElapsedTime(timeout))
-	return backoff.Retry(o, backoff.WithContext(bo, ctx))
+	})
 }

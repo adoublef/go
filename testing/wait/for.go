@@ -19,8 +19,8 @@ import (
 func ForFunc(ctx context.Context, timeout time.Duration, f func() error) error {
 	o := func() error {
 		if err := f(); err != nil {
-			if err == NotReady {
-				return &backoff.PermanentError{Err: NotReady}
+			if err == SkipRetry {
+				return &backoff.PermanentError{Err: SkipRetry}
 			}
 			return err
 		}
@@ -30,5 +30,5 @@ func ForFunc(ctx context.Context, timeout time.Duration, f func() error) error {
 	return backoff.Retry(o, backoff.WithContext(bo, ctx))
 }
 
-//lint:ignore ST1012
-var NotReady = errors.New("not ready")
+// SkipRetry is used as a return value from [ForFunc]
+var SkipRetry = errors.New("skip retry")

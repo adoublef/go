@@ -7,7 +7,6 @@ package wait
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -20,7 +19,7 @@ import (
 func ForNATS(ctx context.Context, ns *server.Server, timeout time.Duration) error {
 	o := func() error {
 		if !ns.ReadyForConnections(10 * time.Millisecond) {
-			return fmt.Errorf("nats server not ready")
+			return NotReady
 		}
 		return nil
 	}

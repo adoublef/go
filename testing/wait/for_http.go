@@ -30,7 +30,7 @@ func ForHTTP(ctx context.Context, timeout time.Duration, endpoint string, opts .
 		}
 		defer res.Body.Close()
 		if res.StatusCode != http.StatusOK {
-			return NotReady
+			return SkipRetry
 		}
 		return nil
 	})

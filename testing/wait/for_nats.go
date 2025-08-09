@@ -18,7 +18,7 @@ import (
 func ForNATS(ctx context.Context, ns *server.Server, timeout time.Duration) error {
 	return ForFunc(ctx, timeout, func() error {
 		if !ns.ReadyForConnections(10 * time.Millisecond) {
-			return NotReady
+			return SkipRetry
 		}
 		return nil
 	})

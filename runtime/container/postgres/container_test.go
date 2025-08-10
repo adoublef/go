@@ -13,7 +13,7 @@ import (
 )
 
 func TestContainer_ConnectionPool(t *testing.T) {
-	cfg, err := container.ConnectionConfig(t.Context(), "pool_max_conns=1")
+	cfg, _, err := container.ConnectionConfig(t.Context(), "pool_max_conns=1")
 	is.OK(t, err)                // ConnectionConfig
 	is.Equal(t, cfg.MaxConns, 1) // config of one connection
 }

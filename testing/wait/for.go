@@ -10,24 +10,24 @@ import (
 	"errors"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 )
 
 // ForFunc waits for function to return non-nil error within the specified timeout.
 // It uses exponential backoff to retry requests until the endpoint responds successfully
 // or the context is canceled.
 func ForFunc(ctx context.Context, timeout time.Duration, f func() error) error {
-	o := func() error {
+	o := func() (bool, error) {
 		if err := f(); err != nil {
 			if err == SkipRetry {
-				return &backoff.PermanentError{Err: SkipRetry}
+				return false, backoff.Permanent(SkipRetry)
 			}
-			return err
+			return false, err
 		}
-		return nil
+		return true, nil
 	}
-	bo := backoff.NewExponentialBackOff(backoff.WithMaxElapsedTime(timeout))
-	return backoff.Retry(o, backoff.WithContext(bo, ctx))
+	_, err := backoff.Retry(ctx, o, backoff.WithBackOff(backoff.NewExponentialBackOff()), backoff.WithMaxElapsedTime(timeout))
+	return err
 }
 
 // SkipRetry is used as a return value from [ForFunc]

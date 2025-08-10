@@ -30,5 +30,7 @@ func ForFunc(ctx context.Context, timeout time.Duration, f func() error) error {
 	return backoff.Retry(o, backoff.WithContext(bo, ctx))
 }
 
-//lint:ignore ST1012 We want to use SkipRetry for historical reasons
+// SkipRetry is used as a return value from [ForFunc]
+//
+//lint:ignore ST1012 following pattern from stdlib with fs.SkipAll & fs.SkipDir
 var SkipRetry = errors.New("skip retry")

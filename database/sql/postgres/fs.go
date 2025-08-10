@@ -70,7 +70,7 @@ func (fsys FS) Down(ctx context.Context) error {
 	return nil
 }
 
-// Version runs the migrations up to a version.
+// Version runs the migrations to a given target version.
 func (fsys FS) Version(ctx context.Context, ver int32) error {
 	conn, err := pgx.Connect(ctx, fsys.URL)
 	if err != nil {

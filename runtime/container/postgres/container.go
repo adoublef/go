@@ -43,15 +43,15 @@ func (c *Container) ConnectionPool(ctx context.Context, args ...string) (*pgxpoo
 }
 
 // ConnectionConfig creates a new [pgxpool.Config].
-func (c *Container) ConnectionConfig(ctx context.Context, args ...string) (*pgxpool.Config, error) {
+func (c *Container) ConnectionConfig(ctx context.Context, args ...string) (*pgxpool.Config, func(ctx context.Context, config *pgxpool.Config) (*pgxpool.Pool, error), error) {
 	url, err := c.ConnectionString(ctx, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to return connection string: %w", err)
+		return nil, nil, fmt.Errorf("failed to return connection string: %w", err)
 	}
 	// todo: proxy
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to return postgres config: %w", err)
+		return nil, nil, fmt.Errorf("failed to return postgres config: %w", err)
 	}
-	return cfg, nil
+	return cfg, pgxpool.NewWithConfig, nil
 }

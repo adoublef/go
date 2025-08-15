@@ -10,7 +10,7 @@ require (
 	github.com/jackc/tern/v2 v2.3.3
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-sqlite3 v1.14.30
-	github.com/nats-io/nats-server/v2 v2.11.7
+	github.com/nats-io/nats-server/v2 v2.11.8
 	github.com/prometheus/client_golang v1.23.0
 	github.com/rs/zerolog v1.34.0
 	github.com/testcontainers/testcontainers-go v0.38.0

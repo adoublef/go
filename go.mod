@@ -9,7 +9,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/jackc/tern/v2 v2.3.3
 	github.com/matryer/is v1.4.1
-	github.com/mattn/go-sqlite3 v1.14.30
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/nats-io/nats-server/v2 v2.11.7
 	github.com/prometheus/client_golang v1.23.0
 	github.com/rs/zerolog v1.34.0

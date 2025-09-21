@@ -19,8 +19,8 @@ import (
 func ForFunc(ctx context.Context, timeout time.Duration, f func() error) error {
 	o := func() (bool, error) {
 		if err := f(); err != nil {
-			if err == SkipRetry {
-				return false, backoff.Permanent(SkipRetry)
+			if errors.Is(err, SkipRetry) {
+				return false, backoff.Permanent(err)
 			}
 			return false, err
 		}

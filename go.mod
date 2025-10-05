@@ -1,6 +1,6 @@
 module go.adoublef.dev
 
-go 1.25.0
+go 1.24.5
 
 require (
 	github.com/Shopify/toxiproxy/v2 v2.12.0

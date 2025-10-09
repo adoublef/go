@@ -11,7 +11,7 @@ require (
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/nats-io/nats-server/v2 v2.12.0
-	github.com/openfga/go-sdk v0.7.2
+	github.com/openfga/go-sdk v0.7.3
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/zerolog v1.34.0
 	github.com/testcontainers/testcontainers-go v0.39.0

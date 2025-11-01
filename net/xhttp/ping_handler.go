@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-// Pinger
+// Pinger abstracts a ping operation that reports reachability via error.
 type Pinger interface {
 	Ping(context.Context) error
 }
@@ -24,7 +24,7 @@ type PingerFunc func(context.Context) error
 
 func (f PingerFunc) Ping(ctx context.Context) error { return f(ctx) }
 
-// PingHandler
+// PingHandler runs Ping single-flight and briefly caches its result.
 func PingHandler(p Pinger, ttl time.Duration) http.Handler {
 	if ttl == 0 {
 		ttl = 60 * time.Second

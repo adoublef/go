@@ -24,7 +24,7 @@ type PingerFunc func(context.Context) error
 
 func (f PingerFunc) Ping(ctx context.Context) error { return f(ctx) }
 
-// PingHandler runs Ping single-flight and briefly caches its result.
+// PingHandler adds simple ping deduplication by allowing the [Pinger] to run at most once at a time and briefly caching its result.
 func PingHandler(p Pinger, ttl time.Duration) http.Handler {
 	if ttl == 0 {
 		ttl = 60 * time.Second
